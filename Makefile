@@ -668,8 +668,9 @@ CFLAGS_PGO_CLANG := -fprofile-generate
 export CFLAGS_PGO_CLANG
 
 ifdef CONFIG_USE_PROFILE
-KBUILD_CFLAGS += $(call cc-option,-fprofile-use=$(PGO_PROFILE_PATH))
+KBUILD_CFLAGS += $(call cc-option,-fprofile-use=$(srctree)/vmlinux.profdata)
 KBUILD_CFLAGS += -Wno-error=backend-plugin
+KBUILD_CFLAGS += -Wno-backend-plugin
 endif
 
 CFLAGS_GCOV	:= -fprofile-arcs -ftest-coverage \

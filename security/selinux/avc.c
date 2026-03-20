@@ -34,6 +34,12 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/avc.h>
 
+#ifdef CONFIG_KSU_SUSFS
+extern u32 susfs_ksu_sid;
+extern u32 susfs_priv_app_sid;
+bool susfs_is_avc_log_spoofing_enabled = false;
+#endif
+
 #define AVC_CACHE_SLOTS			512
 #define AVC_DEF_CACHE_THRESHOLD		512
 #define AVC_CACHE_RECLAIM		16
@@ -674,7 +680,7 @@ static void avc_audit_pre_callback(struct audit_buffer *ab, void *a)
 	const char **perms;
 	int i, perm;
 
-	audit_log_format(ab, "avc:  %s ", sad->denied ? "denied" : "granted");
+	audit_log_format(ab, "avc:  denied ");
 
 	if (av == 0) {
 		audit_log_format(ab, " null");
@@ -727,16 +733,27 @@ static void avc_audit_post_callback(struct audit_buffer *ab, void *a)
 
 	rc = security_sid_to_context(sad->state, sad->tsid, &tcontext,
 				     &tcontext_len);
+#ifdef CONFIG_KSU_SUSFS
+	if (unlikely(sad->tsid == susfs_ksu_sid && READ_ONCE(susfs_is_avc_log_spoofing_enabled))) {
+		if (rc)
+			audit_log_format(ab, " tsid=%d", susfs_priv_app_sid);
+		else
+			audit_log_format(ab, " tcontext=%s", "u:r:priv_app:s0:c512,c768");
+		goto bypass_orig_flow;
+	}
+#endif
 	if (rc)
 		audit_log_format(ab, " tsid=%d", sad->tsid);
 	else
 		audit_log_format(ab, " tcontext=%s", tcontext);
 
+#ifdef CONFIG_KSU_SUSFS
+bypass_orig_flow:
+#endif
 	tclass = secclass_map[sad->tclass-1].name;
 	audit_log_format(ab, " tclass=%s", tclass);
 
-	if (sad->denied)
-		audit_log_format(ab, " permissive=%u", sad->result ? 0 : 1);
+	audit_log_format(ab, " permissive=%u", sad->result ? 0 : 1);
 
 	trace_selinux_audited(sad, scontext, tcontext, tclass);
 	kfree(tcontext);
@@ -773,6 +790,9 @@ noinline int slow_avc_audit(struct selinux_state *state,
 	struct common_audit_data stack_data;
 	struct selinux_audit_data sad;
 
+	if (!denied)
+		return 0;
+
 	if (WARN_ON(!tclass || tclass >= ARRAY_SIZE(secclass_map)))
 		return -EINVAL;
 
@@ -786,7 +806,6 @@ noinline int slow_avc_audit(struct selinux_state *state,
 	sad.ssid = ssid;
 	sad.tsid = tsid;
 	sad.audited = audited;
-	sad.denied = denied;
 	sad.result = result;
 	sad.state = state;
 

@@ -25,6 +25,7 @@
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
 
+
 const struct file_operations generic_ro_fops = {
 	.llseek		= generic_file_llseek,
 	.read_iter	= generic_file_read_iter,
@@ -443,11 +444,9 @@ ssize_t kernel_read(struct file *file, void *buf, size_t count, loff_t *pos)
 }
 EXPORT_SYMBOL(kernel_read);
 
-
 ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 {
 	ssize_t ret;
-
 
 	if (!(file->f_mode & FMODE_READ))
 		return -EBADF;
@@ -576,7 +575,6 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
 #endif
 	return ret;
 }
-EXPORT_SYMBOL_GPL(vfs_write);
 
 /* file_ppos returns &file->f_pos or NULL if file is stream */
 static inline loff_t *file_ppos(struct file *file)
@@ -603,8 +601,17 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 	return ret;
 }
 
+#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_MANUAL_HOOK)
+extern bool ksu_init_rc_hook __read_mostly;
+extern __attribute__((cold)) void ksu_handle_sys_read(unsigned int fd);
+#endif
+
 SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 {
+#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_MANUAL_HOOK)
+	if (unlikely(ksu_init_rc_hook))
+		ksu_handle_sys_read(fd);
+#endif
 	return ksys_read(fd, buf, count);
 }
 
