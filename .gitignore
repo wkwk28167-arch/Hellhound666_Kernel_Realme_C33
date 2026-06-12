@@ -146,4 +146,6 @@ x509.genkey
 /compile_commands.json
 
 
-!/.github
+!/.githubbuild/
+out/
+build.log
