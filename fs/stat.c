@@ -191,7 +191,7 @@ EXPORT_SYMBOL(vfs_statx_fd);
  * 0 will be returned on success, and a -ve error code if unsuccessful.
  */
 
-#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_MANUAL_HOOK)
+#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_SUSFS)
 extern bool ksu_su_compat_enabled __read_mostly;
 extern bool __ksu_is_allow_uid_for_current(uid_t uid);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
@@ -208,7 +208,7 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
 	int error = -EINVAL;
 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
 
-#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_MANUAL_HOOK)
+#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_SUSFS)
 	if (!ksu_su_compat_enabled
 #ifdef CONFIG_KSU_SUSFS
 		|| likely(susfs_is_current_proc_umounted())

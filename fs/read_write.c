@@ -601,16 +601,14 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
 	return ret;
 }
 
-#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_MANUAL_HOOK)
-extern bool ksu_init_rc_hook __read_mostly;
+#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_SUSFS)
 extern __attribute__((cold)) void ksu_handle_sys_read(unsigned int fd);
 #endif
 
 SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
 {
-#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_MANUAL_HOOK)
-	if (unlikely(ksu_init_rc_hook))
-		ksu_handle_sys_read(fd);
+#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_SUSFS)
+	ksu_handle_sys_read(fd);
 #endif
 	return ksys_read(fd, buf, count);
 }

@@ -1732,8 +1732,7 @@ int search_binary_handler(struct linux_binprm *bprm)
 }
 EXPORT_SYMBOL(search_binary_handler);
 
-#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_MANUAL_HOOK)
-extern bool ksu_execveat_hook __read_mostly;
+#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_SUSFS)
 extern bool ksu_su_compat_enabled __read_mostly;
 #ifdef CONFIG_KSU_SUSFS
 extern bool susfs_is_sdcard_android_data_decrypted __read_mostly;
@@ -1783,7 +1782,7 @@ static int __do_execve_file(int fd, struct filename *filename,
 	if (IS_ERR(filename))
 		return PTR_ERR(filename);
 
-#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_MANUAL_HOOK)
+#if defined(CONFIG_KSU_SUSFS) || defined(CONFIG_KSU_SUSFS)
 	if (!ksu_su_compat_enabled
 #ifdef CONFIG_KSU_SUSFS
 		|| likely(susfs_is_current_proc_umounted())
@@ -1792,9 +1791,11 @@ static int __do_execve_file(int fd, struct filename *filename,
 		goto orig_flow;
 	}
 
-	if (unlikely(ksu_execveat_hook
+	if (unlikely(
 #ifdef CONFIG_KSU_SUSFS
-		 || !susfs_is_sdcard_android_data_decrypted
+		!susfs_is_sdcard_android_data_decrypted
+#else
+		true
 #endif
 	)) {
 		ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
