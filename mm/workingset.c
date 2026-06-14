@@ -184,6 +184,7 @@ static unsigned int bucket_order __read_mostly;
 static void *pack_shadow(int memcgid, pg_data_t *pgdat, unsigned long eviction,
 			 bool workingset)
 {
+	eviction >>= bucket_order;
 	eviction &= EVICTION_MASK;
 	eviction = (eviction << MEM_CGROUP_ID_SHIFT) | memcgid;
 	eviction = (eviction << NODES_SHIFT) | pgdat->node_id;
@@ -296,9 +297,7 @@ void workingset_refault(struct page *page, void *shadow)
 	bool workingset;
 	int memcgid;
 
-
 	unpack_shadow(shadow, &memcgid, &pgdat, &eviction, &workingset);
-	eviction <<= bucket_order;
 
 	rcu_read_lock();
 	/*
